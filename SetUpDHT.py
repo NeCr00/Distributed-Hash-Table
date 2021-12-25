@@ -1,40 +1,69 @@
-import socket
+
 from node import node
 import argparse
 import time
 
-def print_menu ():
+
+def arguments(): 
+    # create Parser
+    parser = argparse.ArgumentParser()
+    # adding arguments
+    parser.add_argument('--ip', type=str, required=True,
+                        help='The host address')
+    parser.add_argument('--port', type=int, required=True,
+                        help='The start port number')
+    parser.add_argument('--n', type=int, required=True,
+                        help='The number of nodes')
+    args = parser.parse_args()
+    
+    return args
+
+
+def print_menu():
     print("------------------- Menu: -------------------\n")
-    print ("1 --> Insert Key\n")
+    print("1 --> Insert Key\n")
     print("2 --> Delete Key\n")
     print("3 --> Query Key\n")
     print("4 --> Update Record Based on Key\n")
     print("5 --> Add Node\n")
     print("6 --> Delete Node\n")
+    print("7 --> Exit\n")
     selection = input("Select an option --> ")
 
     return selection
 
+def createNodes (ip,port,num_nodes): #creates instances of class node
+    nodes = []
+    for i in range(num_nodes):
+
+        nodes.append(node(ip, port+i))
+
+    return nodes
+
+def terminate (nodes): # Terminates all the nodes and exiting from the main proccess
     
-#create Parser
-parser = argparse.ArgumentParser()
-#adding arguments
-parser.add_argument('--ip',type=str,required=True,help = 'The host address')
-parser.add_argument('--port',type=int,required=True,help = 'The start port number')
-parser.add_argument('--n',type=int,required=True,help = 'The number of nodes')
-args = parser.parse_args()
+    for i in nodes:
+        i.kill()
+    
+    print("Nodes Terminated ...")
+    print("Exiting ...")
+    exit()
 
-print("---------------------- Welcome to Distributed Hash Tables ----------------------\n")
+def main():
 
-ip = args.ip #ip address of nodes
-port = args.port #starting port of nodes
-num_nodes = args.n #number of nodes
+    args = arguments() #get correct arguments from command-line
+    nodes = createNodes(args.ip, args.port,args.n)  # ip address of nodes, starting port of nodes, number of nodes
 
-nodes = list()
+    while True:
+        selection = print_menu()
+        
+        if(selection =='7'):
+            terminate(nodes)
+    
 
-for i in range(num_nodes):
-    nodes.append(node (ip,port+i))
+   
 
 
-
-
+if __name__ == '__main__':
+    print("---------------------- Welcome to Distributed Hash Tables ----------------------\n")
+    main()
