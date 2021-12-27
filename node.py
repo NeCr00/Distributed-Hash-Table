@@ -19,7 +19,7 @@ class node:
         id = hash(ip+str(port))
         return id
 
-    def run(self,ip,port): #run () is the function that proccess is executing when you run the thread.start()
+    def run(self,ip,port): #run () is the function that proccess is executing when you run the process.start()
 
         HOST, PORT = ip, port
         
