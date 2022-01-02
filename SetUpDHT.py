@@ -4,7 +4,7 @@ import argparse
 import time
 
 
-def arguments(): 
+def arguments():
     # create Parser
     parser = argparse.ArgumentParser()
     # adding arguments
@@ -15,7 +15,7 @@ def arguments():
     parser.add_argument('--n', type=int, required=True,
                         help='The number of nodes')
     args = parser.parse_args()
-    
+
     return args
 
 
@@ -32,7 +32,11 @@ def print_menu():
 
     return selection
 
-def createNodes (ip,port,num_nodes): #creates instances of class node
+def create_Ring(node):
+    node.successor = {"id":node.id,"ip":node.ip,"port":node.port}
+    node.predecessor = None
+
+def createNodes(ip, port, num_nodes):  # creates instances of class node
     nodes = []
     for i in range(num_nodes):
 
@@ -40,28 +44,30 @@ def createNodes (ip,port,num_nodes): #creates instances of class node
 
     return nodes
 
-def terminate (nodes): # Terminates all the nodes and exiting from the main proccess
-    
+
+def terminate(nodes):  # Terminates all the nodes and exiting from the main proccess
+
     for i in nodes:
-        i.kill()
-    
+        i.shutdown()
+
     print("Nodes Terminated ...")
     print("Exiting ...")
     exit()
 
+
 def main():
 
-    args = arguments() #get correct arguments from command-line
-    nodes = createNodes(args.ip, args.port,args.n)  # ip address of nodes, starting port of nodes, number of nodes
+    args = arguments()  # get correct arguments from command-line
+    # ip address of nodes, starting port of nodes, number of nodes
+    nodes = createNodes(args.ip, args.port, args.n)
+    create_Ring(nodes[0])
 
+    nodes[0].join(nodes[1])
     while True:
         selection = print_menu()
         
-        if(selection =='7'):
+        if(selection == '7'):
             terminate(nodes)
-    
-
-   
 
 
 if __name__ == '__main__':
