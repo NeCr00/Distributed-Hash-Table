@@ -65,19 +65,17 @@ def main():
     nodes = createNodes(args.ip, args.port, args.n)
     create_Ring(nodes[0],nodes[1])
 
-    nodes[0].join(nodes[4])
+    nodes[0].join(nodes[2])
     nodes[0].join(nodes[3])
+    nodes[0].join(nodes[4])
     
-    nodes[4].stabilize()
-    nodes[3].stabilize()
-    nodes[0].stabilize()
-    nodes[1].stabilize()
+    
     
     
     print(vars (nodes[0]),end="\n")
     print(vars (nodes[1]),end="\n")
     print(vars (nodes[4]),end="\n")
-    print(vars (nodes[3]),end="\n")
+    print(vars (nodes[2]),end="\n")
     
     while True:
         selection = print_menu()

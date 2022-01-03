@@ -22,13 +22,13 @@ class node:
         self.successor = None
         self.predecessor = None
         self.Lock = threading.Lock()
-        self.thread = threading.Thread(target=self.run, args=(self.queue1,self.port,self.ip,))  # creates a thread to run the node
+        self.thread = threading.Thread(target=self.run, args=(self.queue1,))  # creates a thread to run the node
         self.thread.start()  # starts the thread
 
-    def run(self, queue1,port,ip):  # run () is the function that proccess is executing when you run the thread.start()
+    def run(self, queue1):  # run () is the function that proccess is executing when you run the thread.start()
 
 
-        HOST, PORT = ip, port
+        HOST, PORT = self.ip, self.port
         # Create socket instance, AF_INET refers to the address-family ipv4.
         listen_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         # The SOCK_STREAM means connection-oriented TCP protocol.
@@ -78,11 +78,10 @@ class node:
 
         data = json.dumps(data)
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        try:
-            sock.connect((host, port))
-            sock.sendall(bytes(data, encoding="utf-8"))
-        finally:
-            sock.close()
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        sock.connect((host, port))
+        sock.sendall(bytes(data, encoding="utf-8"))
+        sock.close()
 
     
 
