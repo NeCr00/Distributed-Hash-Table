@@ -8,13 +8,14 @@ import hashlib
 
 
 class node:
-    
+
     data = list()
     finger_list = [None] * 160
     req_data = None
     queue1 = Queue()
+
     def __init__(self, ip, port):
-        
+
         self.ip = ip  # returns the ip of localhost
         self.port = port  # port number
         # generates the ID of node using hash algorith
@@ -22,11 +23,11 @@ class node:
         self.successor = None
         self.predecessor = None
         self.Lock = threading.Lock()
-        self.thread = threading.Thread(target=self.run, args=(self.queue1,))  # creates a thread to run the node
+        self.thread = threading.Thread(target=self.run, args=(
+            self.queue1,))  # creates a thread to run the node
         self.thread.start()  # starts the thread
 
     def run(self, queue1):  # run () is the function that proccess is executing when you run the thread.start()
-
 
         HOST, PORT = self.ip, self.port
         # Create socket instance, AF_INET refers to the address-family ipv4.
@@ -38,7 +39,7 @@ class node:
         listen_socket.bind((HOST, PORT))
         listen_socket.listen(10)  # clients we can listen
         #thread_stabilize = threading.Timer(3,target=self.stabilize(),args=())
-        
+
         while True:
             # enables the connection and waits for requests
             client_connection, client_address = listen_socket.accept()
@@ -48,27 +49,21 @@ class node:
             command = request_data["command"]
 
             if command == "find_successor":
-                result = self.find_successor(request_data["id"])
-                if(result["found"]):
-                    request_data.update(result)
-                    request_data["command"] = "rcv_data"
-                    self.sendData(request_data["s_ip"],
-                                  request_data["s_p"], request_data)
-                else:
-                    self.sendData(self.successor["ip"],self.successor["port"],request_data)
 
-            if command == "get_predecessor" :
+                result = self.find_successor(request_data["id"], request_data)
+
+            if command == "get_predecessor":
                 result = self.predecessor
-                result.update({"command":"rcv_data"})
-                self.sendData(request_data["s_ip"],request_data["s_p"],result)
-            
+                result = {"command": "rcv_data", "data": result}
+                self.sendData(request_data["s_ip"],
+                              request_data["s_p"], result)
 
             if command == "notify":
                 self.notify(request_data)
-            
+
             if command == "rcv_data":
                 queue1.put(request_data)
-                
+
             if command == "shutdown":
                 break
 
@@ -79,52 +74,68 @@ class node:
         data = json.dumps(data)
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        sock.connect((host, port))
+        try:
+            sock.connect((host, port))
+        except socket.error as msg:
+            print(
+                "Couldnt connect with the socket-server: %s\n terminating program" % msg)
+            exit()
         sock.sendall(bytes(data, encoding="utf-8"))
         sock.close()
 
-    
-
-    def find_successor(self, id):
-        
-        
+    def find_successor(self, id, request):
+       
         if(id > self.id and id <= self.successor["id"]):
-            return {"found": 1, "id": self.successor["id"], "ip": self.successor["ip"], "port": self.successor["port"]}
+            data = {"command": "rcv_data", "successor": self.successor}
+            self.sendData(request["s_ip"], request["s_p"], data)
+        elif(self.id > self.successor["id"] and id<self.successor["id"]):
+            data = {"command": "rcv_data", "successor": self.successor}
+            self.sendData(request["s_ip"], request["s_p"], data)   
         else:
-            return {"found": 0, "ip": self.successor["ip"], "port": self.successor["port"]}
+            self.sendData(self.successor["ip"],
+                          self.successor["port"], request)
 
     def get_successor(self, id):
-        self.sendData(self.ip, self.port, data={"command": "find_successor", "id": id, "s_ip": self.ip, "s_p": self.port})
-        time.sleep(2)
+        self.sendData(self.successor["ip"], self.successor["port"], data={
+                      "command": "find_successor", "id": id, "s_ip": self.ip, "s_p": self.port})
+        time.sleep(0.2)
         response = self.queue1.get()
-        self.req_data = response
+        response = response["successor"]
         return response
 
     def join(self, node):
         response = self.get_successor(node.id)
         time.sleep(0.1)
-        node.successor = {"id":response["id"],"ip":response["ip"],"port":response["port"]}
+        node.successor = response
 
-    
-    def stabilize (self):
-        
-        time.sleep(2)
-        data = {"command":"get_predecessor","s_ip":self.ip,"s_p":self.port}
-        self.sendData(self.successor["ip"],self.successor["port"],data)
-        time.sleep(2)
+    def stabilize(self):
+        time.sleep(0.2)
+        data = {"command": "get_predecessor",
+                "s_ip": self.ip, "s_p": self.port}
+        self.sendData(self.successor["ip"], self.successor["port"], data)
+        time.sleep(0.2)
         response = self.queue1.get()
-        predecessor_id = response["id"]
-        if(predecessor_id> self.id and predecessor_id<self.successor["id"]):
-            self.successor = {"id":response["id"],"ip":response["ip"],"port":response["port"]}
-        
-        data = {"command":"notify","id":self.id,"ip":self.ip,"port":self.port}
-        self.sendData(self.successor["ip"],self.successor["port"],data)
 
-    def notify(self,node):
-        if(self.predecessor==None or (node["id"]>self.predecessor["id"] and node["id"]<self.id)):
-            self.predecessor = node
+        if(response["data"] != None):
+            predecessor_id = response["data"]["id"]
+            response = response["data"]
+            if(predecessor_id > self.id and predecessor_id < self.successor["id"]):
+                self.successor = {
+                    "id": response["id"], "ip": response["ip"], "port": response["port"]}
+            elif(self.id > self.successor["id"] and self.successor["id"]> response["id"]):
+                self.successor = {
+                    "id": response["id"], "ip": response["ip"], "port": response["port"]}
+        data = {"command": "notify", "id": self.id,
+                "ip": self.ip, "port": self.port}
+        self.sendData(self.successor["ip"], self.successor["port"], data)
 
-
+    def notify(self, node):
+        if(self.predecessor == None or (node["id"] > self.predecessor["id"] and node["id"] < self.id)):
+            self.predecessor = {"id": node["id"],
+                                "ip": node["ip"], "port": node["port"]}
+        elif(self.predecessor["id"]>self.id and self.id > node["id"]):
+            self.predecessor = {"id": node["id"],
+                                "ip": node["ip"], "port": node["port"]}
     def getHashedID(self, ip, port):  # hashind data for id
         input = ip+str(port)
         hashobj = hashlib.sha256(input.encode())

@@ -34,9 +34,8 @@ def print_menu():
 
 def create_Ring(node1,node2):
     node1.successor = {"id":node2.id,"ip":node2.ip,"port":node2.port}
-    node1.predecessor = {"id":node2.id,"ip":node2.ip,"port":node2.port}
     node2.successor = {"id":node1.id,"ip":node1.ip,"port":node1.port}
-    node2.predecessor = {"id":node1.id,"ip":node1.ip,"port":node1.port}
+   
 
 
 def createNodes(ip, port, num_nodes):  # creates instances of class node
@@ -64,18 +63,31 @@ def main():
     # ip address of nodes, starting port of nodes, number of nodes
     nodes = createNodes(args.ip, args.port, args.n)
     create_Ring(nodes[0],nodes[1])
-
+ 
+    
     nodes[0].join(nodes[2])
     nodes[0].join(nodes[3])
-    nodes[0].join(nodes[4])
-    
-    
-    
-    
+    nodes[0].stabilize()
+    nodes[1].stabilize()
+    nodes[2].stabilize()
+    nodes[0].stabilize()
+    nodes[1].stabilize()
+    nodes[3].stabilize()
+    nodes[2].stabilize()
+    nodes[0].stabilize()
+    nodes[1].stabilize()
+    nodes[2].stabilize()
+    nodes[0].stabilize()
+    nodes[1].stabilize()
+    nodes[3].stabilize()
+    nodes[2].stabilize()
+    nodes[0].stabilize()
+    nodes[1].stabilize()
+
     print(vars (nodes[0]),end="\n")
     print(vars (nodes[1]),end="\n")
-    print(vars (nodes[4]),end="\n")
     print(vars (nodes[2]),end="\n")
+    print(vars (nodes[3]),end="\n")
     
     while True:
         selection = print_menu()
