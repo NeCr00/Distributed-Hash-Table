@@ -26,7 +26,7 @@ class node:
         self.thread = threading.Thread(target=self.run, args=(
             self.queue1,))  # creates a thread to run the node
         self.thread.start()  # starts the thread
-
+        self.stabilize()
     def run(self, queue1):  # run () is the function that proccess is executing when you run the thread.start()
 
         HOST, PORT = self.ip, self.port
@@ -84,13 +84,13 @@ class node:
         sock.close()
 
     def find_successor(self, id, request):
-       
+
         if(id > self.id and id <= self.successor["id"]):
             data = {"command": "rcv_data", "successor": self.successor}
             self.sendData(request["s_ip"], request["s_p"], data)
-        elif(self.id > self.successor["id"] and id<self.successor["id"]):
+        elif(self.id > self.successor["id"] and id < self.successor["id"]):
             data = {"command": "rcv_data", "successor": self.successor}
-            self.sendData(request["s_ip"], request["s_p"], data)   
+            self.sendData(request["s_ip"], request["s_p"], data)
         else:
             self.sendData(self.successor["ip"],
                           self.successor["port"], request)
@@ -98,44 +98,47 @@ class node:
     def get_successor(self, id):
         self.sendData(self.successor["ip"], self.successor["port"], data={
                       "command": "find_successor", "id": id, "s_ip": self.ip, "s_p": self.port})
-        time.sleep(0.2)
+        # time.sleep(0.2)
         response = self.queue1.get()
         response = response["successor"]
         return response
 
     def join(self, node):
         response = self.get_successor(node.id)
-        time.sleep(0.1)
+        # time.sleep(0.1)
         node.successor = response
 
     def stabilize(self):
-        time.sleep(0.2)
-        data = {"command": "get_predecessor",
-                "s_ip": self.ip, "s_p": self.port}
-        self.sendData(self.successor["ip"], self.successor["port"], data)
-        time.sleep(0.2)
-        response = self.queue1.get()
 
-        if(response["data"] != None):
-            predecessor_id = response["data"]["id"]
-            response = response["data"]
-            if(predecessor_id > self.id and predecessor_id < self.successor["id"]):
-                self.successor = {
-                    "id": response["id"], "ip": response["ip"], "port": response["port"]}
-            elif(self.id > self.successor["id"] and self.successor["id"]> response["id"]):
-                self.successor = {
-                    "id": response["id"], "ip": response["ip"], "port": response["port"]}
-        data = {"command": "notify", "id": self.id,
-                "ip": self.ip, "port": self.port}
-        self.sendData(self.successor["ip"], self.successor["port"], data)
+        if(self.successor):
+            data = {"command": "get_predecessor",
+                    "s_ip": self.ip, "s_p": self.port}
+            self.sendData(self.successor["ip"], self.successor["port"], data)
+            # time.sleep(0.2)
+            response = self.queue1.get()
+
+            if(response["data"] != None):
+                predecessor_id = response["data"]["id"]
+                response = response["data"]
+                if(predecessor_id > self.id and predecessor_id < self.successor["id"]):
+                    self.successor = {
+                        "id": response["id"], "ip": response["ip"], "port": response["port"]}
+                elif(self.id > self.successor["id"] and self.successor["id"] > response["id"]):
+                    self.successor = {
+                        "id": response["id"], "ip": response["ip"], "port": response["port"]}
+            data = {"command": "notify", "id": self.id,
+                    "ip": self.ip, "port": self.port}
+            self.sendData(self.successor["ip"], self.successor["port"], data)
+        threading.Timer(1, self.stabilize).start()
 
     def notify(self, node):
         if(self.predecessor == None or (node["id"] > self.predecessor["id"] and node["id"] < self.id)):
             self.predecessor = {"id": node["id"],
                                 "ip": node["ip"], "port": node["port"]}
-        elif(self.predecessor["id"]>self.id and self.id > node["id"]):
+        elif(self.predecessor["id"] > self.id and self.id > node["id"]):
             self.predecessor = {"id": node["id"],
                                 "ip": node["ip"], "port": node["port"]}
+
     def getHashedID(self, ip, port):  # hashind data for id
         input = ip+str(port)
         hashobj = hashlib.sha256(input.encode())
