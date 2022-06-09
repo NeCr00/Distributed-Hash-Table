@@ -1,4 +1,3 @@
-
 from queue import Queue
 import socket
 import threading
@@ -27,13 +26,17 @@ class node:
             self.queue1,))  # creates a thread to run the node
         self.thread.start()  # starts the thread
         self.stabilize()
+
+    def __repr__(self):
+        return "\nid:%s \n port:%s \n successor:%s \n predecessor:%s\n\n" % (str(self.id), str(self.port), str(self.successor), str(self.predecessor))
+    
     def run(self, queue1):  # run () is the function that proccess is executing when you run the thread.start()
 
         HOST, PORT = self.ip, self.port
         # Create socket instance, AF_INET refers to the address-family ipv4.
         listen_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         # The SOCK_STREAM means connection-oriented TCP protocol.
-        # Set option for socket to reuseaddress for different ports
+        # Set option for socket to re-use address for different ports
         listen_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         # bind the ip and the port of the socket
         listen_socket.bind((HOST, PORT))
@@ -139,7 +142,7 @@ class node:
             self.predecessor = {"id": node["id"],
                                 "ip": node["ip"], "port": node["port"]}
 
-    def getHashedID(self, ip, port):  # hashind data for id
+    def getHashedID(self, ip, port):  # hashing data for id
         input = ip+str(port)
         hashobj = hashlib.sha256(input.encode())
         id = hashobj.hexdigest()

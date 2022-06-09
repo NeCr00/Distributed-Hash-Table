@@ -1,4 +1,3 @@
-
 from node import node
 import argparse
 import time
@@ -27,7 +26,8 @@ def print_menu():
     print("4 --> Update Record Based on Key\n")
     print("5 --> Add Node\n")
     print("6 --> Delete Node\n")
-    print("7 --> Exit\n")
+    print("7 --> Print Current Nodes\n")
+    print("8 --> Exit\n")
     selection = input("Select an option --> ")
 
     return selection
@@ -68,6 +68,7 @@ def main():
     nodes[0].join(nodes[2])
     nodes[0].join(nodes[3])
    
+    print('Setting up the initial ring...\n')
     time.sleep(8)
     print(vars (nodes[0]),end="\n")
     print(vars (nodes[1]),end="\n")
@@ -78,6 +79,9 @@ def main():
         selection = print_menu()
         
         if(selection == '7'):
+            print(nodes)
+
+        if(selection == '8'):
             terminate(nodes)
 
 
